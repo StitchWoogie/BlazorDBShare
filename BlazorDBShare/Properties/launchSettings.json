@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+    "iisSettings": {
+      "windowsAuthentication": false,
+      "anonymousAuthentication": true,
+      "iisExpress": {
+        "applicationUrl": "http://localhost:61158",
+        "sslPort": 44330
+      }
+    },
+    "profiles": {
+      "http": {
+        "commandName": "Project",
+        "dotnetRunMessages": true,
+        "launchBrowser": true,
+        //"applicationUrl": "http://localhost:5092",
+        "applicationUrl": "http://0.0.0.0:5092", // 모든 네트워크 인터페이스에서 수신 대기
+        "environmentVariables": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "https": {
+        "commandName": "Project",
+        "dotnetRunMessages": true,
+        "launchBrowser": true,
+        //"applicationUrl": "https://localhost:7129;http://localhost:5092",
+        "applicationUrl": "https://0.0.0.0:7129;http://0.0.0.0:5092", // 모든 네트워크 인터페이스에서 수신 대기
+        "environmentVariables": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "IIS Express": {
+        "commandName": "IISExpress",
+        "launchBrowser": true,
+        "environmentVariables": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      }
+    }
+  }

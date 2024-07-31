@@ -1,0 +1,137 @@
+﻿@page "/DBViewer"
+@rendermode InteractiveServer
+@using System.Data
+@inject DatabaseService DatabaseService
+@inject ILogger<DatabaseViewer> Logger
+
+<h1>데이터베이스 뷰어</h1>
+
+<select @onchange="@(async (e) => await OnTableSelectionChanged(e))">
+    @foreach (var table in tables)
+    {
+        <option value="@table">@table</option>
+    }
+</select>
+@if (data != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                @foreach (DataColumn column in data.Columns)
+                {
+                    <th>@column.ColumnName</th>
+                }
+                <th>작업</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in data.Rows)
+            {
+                <tr>
+                    @foreach (var item in row.ItemArray)
+                    {
+                        <td>@item</td>
+                    }
+                    <td>
+                        <button @onclick="@(() => EditRow(row))">편집</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (editingRow != null)
+{
+    <h3>@(selectedTable == "Table2" ? "Remains 편집" : "PN 편집")</h3>
+    <div>
+        <label>ID: @editingRow["ID"]</label>
+    </div>
+    <div>
+        <label>현재 @(selectedTable == "Table2" ? "Remains" : "PN"): @editingRow[selectedTable == "Table2" ? "Remains" : "PN"]</label>
+    </div>
+    <div>
+        <label>새 @(selectedTable == "Table2" ? "Remains" : "PN"):</label>
+        <input @bind="newPN" />
+    </div>
+    <button @onclick="SaveChanges">저장</button>
+    <button @onclick="CancelEdit">취소</button>
+}
+
+@code {
+    private List<string> tables = new List<string>();
+    private DataTable? data;
+    private string? selectedTable;
+    private DataRow? editingRow;
+    private string? newPN;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("OnInitializedAsync called");
+        tables = DatabaseService.GetTableNames();
+        if (tables.Any())
+        {
+            selectedTable = tables.First();
+            await LoadData();
+        }
+    }
+
+    private async Task OnTableSelectionChanged(ChangeEventArgs e)
+    {
+        Logger.LogInformation($"OnTableSelectionChanged called with value: {e.Value}");
+        selectedTable = e.Value.ToString();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        Logger.LogInformation($"LoadData called for table: {selectedTable}");
+        data = DatabaseService.ExecuteQuery($"SELECT * FROM [{selectedTable}]");
+        StateHasChanged();
+    }
+
+    private void EditRow(DataRow row)
+    {
+        Logger.LogInformation($"EditRow called for row ID: {row["ID"]}");
+        editingRow = row;
+        newPN = row[selectedTable == "Table2" ? "Remains" : "PN"].ToString();
+        StateHasChanged();
+    }
+
+    private async Task SaveChanges()
+    {
+        Logger.LogInformation("SaveChanges called");
+        if (editingRow != null)
+        {
+            string field = selectedTable == "Table2" ? "Remains" : "PN";
+            string updateQuery = $"UPDATE [{selectedTable}] SET {field} = @field WHERE ID = @ID";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@field", newPN },
+                { "@ID", editingRow["ID"] }
+            };
+
+            int rowsAffected = DatabaseService.ExecuteNonQuery(updateQuery, parameters);
+
+            if (rowsAffected > 0)
+            {
+                Logger.LogInformation($"Updated {field} for ID {editingRow["ID"]} to {newPN}");
+                editingRow = null;
+                newPN = null;
+                await LoadData();
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to update {field} for ID {editingRow["ID"]}");
+            }
+        }
+    }
+
+    private void CancelEdit()
+    {
+        Logger.LogInformation("CancelEdit called");
+        editingRow = null;
+        newPN = null;
+        StateHasChanged();
+    }
+}
